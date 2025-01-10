@@ -7,7 +7,7 @@ public class VideoItem {
 
     public VideoItem(String video_link){
         this.video_link = video_link;
-        setVideoType();;
+        setVideoType();
     }
 
     public String getVideoLink() {
