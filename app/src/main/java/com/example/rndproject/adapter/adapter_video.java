@@ -1,11 +1,9 @@
 package com.example.rndproject.adapter;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -32,8 +30,8 @@ import java.util.Set;
 
 public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private List<VideoItem> videoList;
-    private Set<mp4_viewholder> activeViewHolders = new HashSet<>();
+    private final List<VideoItem> videoList;
+    private final Set<mp4_viewholder> activeMp4Players = new HashSet<>();
 
     public adapter_video(List<VideoItem> videoList) {
         this.videoList = videoList;
@@ -365,7 +363,7 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
         if (holder instanceof mp4_viewholder) {
             ((mp4_viewholder) holder).pausePlayer();
-            activeViewHolders.remove(holder);
+            activeMp4Players.remove(holder);
         } else if(holder instanceof youtube_viewholder){
             ((youtube_viewholder) holder).youtubePause();
         }
@@ -376,7 +374,7 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         super.onViewAttachedToWindow(holder);
 
         if (holder instanceof mp4_viewholder) {
-            activeViewHolders.add((mp4_viewholder) holder);
+            activeMp4Players.add((mp4_viewholder) holder);
             ((mp4_viewholder) holder).playPlayer();
 
         }  else if(holder instanceof youtube_viewholder){
@@ -386,21 +384,21 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     public void releaseVideos() {
         // Loop through all active mp4_viewholder instances and pause them
-        for (mp4_viewholder viewHolder : activeViewHolders) {
+        for (mp4_viewholder viewHolder : activeMp4Players) {
             viewHolder.releasePlayer();
         }
     }
 
     public void pauseVideos() {
         // Loop through all active mp4_viewholder instances and pause them
-        for (mp4_viewholder viewHolder : activeViewHolders) {
+        for (mp4_viewholder viewHolder : activeMp4Players) {
             viewHolder.pausePlayer();
         }
     }
 
     public void resumeVideos() {
         // Loop through all active mp4_viewholder instances and pause them
-        for (mp4_viewholder viewHolder : activeViewHolders) {
+        for (mp4_viewholder viewHolder : activeMp4Players) {
             viewHolder.playPlayer();
         }
     }
