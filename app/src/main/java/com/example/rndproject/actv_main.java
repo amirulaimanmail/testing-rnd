@@ -30,23 +30,33 @@ public class actv_main extends AppCompatActivity {
             startActivity(intent);
         });
 
-        addButton("Video with controller", buttonContainer, v -> {
+        addButton("VideoView with custom controls", buttonContainer, v -> {
             Intent intent = new Intent(this, actv_video_with_controller.class);
             startActivity(intent);
         });
 
-        addButton("Video with controller with fullscreen", buttonContainer, v -> {
-            Intent intent = new Intent(this, actv_video_with_controller_fullscreen.class);
+        addButton("VideoView with default controls", buttonContainer, v -> {
+            Intent intent = new Intent(this, actv_video_with_controller_2.class);
             startActivity(intent);
         });
 
-        addButton("Video with controller EXO", buttonContainer, v -> {
-            Intent intent = new Intent(this, actv_video_with_controller_exo.class);
+        addButton("ExoPlayer with custom controls", buttonContainer, v -> {
+            Intent intent = new Intent(this, actv_video_exo.class);
             startActivity(intent);
         });
 
-        addButton("Youtube", buttonContainer2, v -> {
+        addButton("Youtube Default", buttonContainer2, v -> {
             Intent intent = new Intent(this, actv_video_youtube_2.class);
+            startActivity(intent);
+        });
+
+        addButton("Youtube Simulate Play", buttonContainer2, v -> {
+            Intent intent = new Intent(this, actv_video_youtube_3.class);
+            startActivity(intent);
+        });
+
+        addButton("Youtube Library Custom", buttonContainer2, v -> {
+            Intent intent = new Intent(this, actv_video_youtube_4.class);
             startActivity(intent);
         });
     }

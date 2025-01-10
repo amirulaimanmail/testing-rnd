@@ -1,6 +1,7 @@
 package com.example.rndproject;
 
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -13,7 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.rndproject.R;
 
-public class actv_video_youtube_2 extends AppCompatActivity {
+public class actv_video_youtube_3 extends AppCompatActivity {
 
     private WebView youtubeWebView;
     private FrameLayout fullscreenLayout;
@@ -33,7 +34,14 @@ public class actv_video_youtube_2 extends AppCompatActivity {
         webSettings.setDomStorageEnabled(true);  // Enable DOM storage for embedded videos
 
         // Set WebViewClient to ensure links open inside the WebView
-        youtubeWebView.setWebViewClient(new WebViewClient());
+        youtubeWebView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // Page has finished loading, you can perform actions now
+                youtubeWebView.postDelayed(() -> simulateTouchAtCenter(), 150);
+            }
+        });
 
         // Set WebChromeClient to detect fullscreen toggle
         youtubeWebView.setWebChromeClient(new WebChromeClient() {
@@ -63,7 +71,7 @@ public class actv_video_youtube_2 extends AppCompatActivity {
         String htmlString = "<html><body style=\"margin:0;padding:0;\">" +
                 "<iframe id=\"youtubePlayer\" width=\"100%\" height=\"100%\" src=\"https://www.youtube.com/embed/"
                 + url
-                + "?enablejsapi=1&autoplay=1&playsinline=1&mute=1\" frameborder=\"0\" allow=\"accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>" +
+                + "?enablejsapi=1&autoplay=0&mute=0\" frameborder=\"0\" allow=\"accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>" +
                 "<script>" +
                 "var player;" +
                 "function onYouTubePlayerAPIReady() {" +
@@ -75,9 +83,6 @@ public class actv_video_youtube_2 extends AppCompatActivity {
 
         // Load the HTML string into the WebView
         youtubeWebView.loadData(htmlString, "text/html", "utf-8");
-
-        // Simulate unmute after 2 seconds
-        youtubeWebView.postDelayed(this::simulateUnmute, 3000);
     }
 
     // Method to check the fullscreen state if needed
@@ -101,16 +106,24 @@ public class actv_video_youtube_2 extends AppCompatActivity {
         youtubeWebView.setVisibility(View.VISIBLE);  // Show WebView again
     }
 
-    private void simulateUnmute() {
-        // Unmute the video
-        String unmuteCode = "if (player) { player.unMute(); }";
-        youtubeWebView.evaluateJavascript(unmuteCode, null);
+    private void simulateTouchAtCenter() {
+        // Get the WebView's width and height
+        int width = youtubeWebView.getWidth();
+        int height = youtubeWebView.getHeight();
 
-        // Add a delay before playing the video to ensure it's ready
-        String playCode = "if (player) { player.playVideo(); }";
-        youtubeWebView.postDelayed(() -> {
-            youtubeWebView.evaluateJavascript(playCode, null);
-        }, 1000); // 1 second delay to ensure the unmute is processed
+        // Calculate the center of the WebView
+        float centerX = width / 2f;
+        float centerY = height / 2f;
+
+        // Create the MotionEvent for a touch event at the center
+        long downTime = System.currentTimeMillis();
+        long eventTime = System.currentTimeMillis() + 100;
+        MotionEvent motionEventDown = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_DOWN, centerX, centerY, 0);
+        MotionEvent motionEventUp = MotionEvent.obtain(downTime, eventTime + 100, MotionEvent.ACTION_UP, centerX, centerY, 0);
+
+        // Dispatch the touch events to the WebView
+        youtubeWebView.dispatchTouchEvent(motionEventDown);
+        youtubeWebView.dispatchTouchEvent(motionEventUp);
     }
 
 
