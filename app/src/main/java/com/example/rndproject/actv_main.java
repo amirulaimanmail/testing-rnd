@@ -45,6 +45,11 @@ public class actv_main extends AppCompatActivity {
             startActivity(intent);
         });
 
+        addButton("Video Pager", buttonContainer, v -> {
+            Intent intent = new Intent(this, actv_video_pager.class);
+            startActivity(intent);
+        });
+
         addButton("Youtube Default", buttonContainer2, v -> {
             Intent intent = new Intent(this, actv_video_youtube_2.class);
             startActivity(intent);

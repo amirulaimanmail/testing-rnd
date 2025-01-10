@@ -15,9 +15,6 @@
         android:theme="@style/Theme.RnDProject"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
-            android:exported="false" />
-        <activity
             android:name=".actv_main"
             android:exported="true">
             <intent-filter>
@@ -34,6 +31,7 @@
         <activity android:name=".actv_video_youtube_2" />
         <activity android:name=".actv_video_youtube_3" />
         <activity android:name=".actv_video_youtube_4" />
+        <activity android:name=".actv_video_pager" />
     </application>
 
 </manifest>

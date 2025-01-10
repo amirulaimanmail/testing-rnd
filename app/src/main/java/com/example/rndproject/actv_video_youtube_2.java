@@ -7,11 +7,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.example.rndproject.R;
 
 public class actv_video_youtube_2 extends AppCompatActivity {
 
@@ -24,7 +21,7 @@ public class actv_video_youtube_2 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.actv_video_youtube2);  // Your layout file
 
-        youtubeWebView = findViewById(R.id.youtubeWebView);
+        youtubeWebView = findViewById(R.id.actv_video_youtube_webview);
         fullscreenLayout = findViewById(R.id.actv_video_youtube_fullscreen_container);
 
         // Enable JavaScript and DOM storage for better YouTube support
@@ -78,11 +75,6 @@ public class actv_video_youtube_2 extends AppCompatActivity {
 
         // Simulate unmute after 2 seconds
         youtubeWebView.postDelayed(this::simulateUnmute, 3000);
-    }
-
-    // Method to check the fullscreen state if needed
-    public boolean isFullScreen() {
-        return isFullScreen;
     }
 
     // Method to set the WebView layout to fullscreen

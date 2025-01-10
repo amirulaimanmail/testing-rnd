@@ -3,23 +3,26 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+
     <FrameLayout
-        android:id="@+id/actv_video_youtube_container"
+        android:id="@+id/actv_video_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintDimensionRatio="16:9"
         app:layout_constraintTop_toTopOf="parent">
 
-        <WebView
-            android:id="@+id/actv_video_youtube_webview"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/actv_video_pager_rv"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
     </FrameLayout>
 
     <FrameLayout
-        android:id="@+id/actv_video_youtube_fullscreen_container"
+        android:id="@+id/actv_video_fullscreen_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        android:visibility="gone"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
