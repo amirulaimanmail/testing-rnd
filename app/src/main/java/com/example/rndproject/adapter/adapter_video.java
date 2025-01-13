@@ -1,5 +1,6 @@
 package com.example.rndproject.adapter;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,7 +32,8 @@ import java.util.Set;
 public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private final List<VideoItem> videoList;
-    private final Set<mp4_viewholder> activeMp4Players = new HashSet<>();
+    private final Set<VideoPlayerHolder> activeVideoPlayers = new HashSet<>();
+
 
     public adapter_video(List<VideoItem> videoList) {
         this.videoList = videoList;
@@ -40,6 +42,7 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             String type = video.getVideoType();
             return !"MP4".equals(type) && !"YouTube".equals(type);
         });
+
     }
 
     @NonNull
@@ -87,7 +90,7 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         return videoList.size();
     }
 
-    public static class mp4_viewholder extends RecyclerView.ViewHolder {
+    public static class mp4_viewholder extends RecyclerView.ViewHolder implements VideoPlayerHolder{
         private PlayerView playerView;
         private ExoPlayer exoPlayer;
 
@@ -101,7 +104,7 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
         private boolean controllerDisabled = false;
 
-        public mp4_viewholder(@NonNull View itemView) {
+        public mp4_viewholder(@NonNull View itemView){
             super(itemView);
             playerView = itemView.findViewById(R.id.actv_video_playerview);
             btnPlayPause = playerView.findViewById(R.id.media_playpause_btn);
@@ -200,9 +203,10 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             playerView.setUseController(true);
             playerView.setControllerShowTimeoutMs(1500);
 
-            exoPlayer.play();
+            //exoPlayer.play();
         }
 
+        @Override
         public void releasePlayer() {
             if (exoPlayer != null) {
                 exoPlayer.stop();
@@ -211,15 +215,17 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             }
         }
 
-        public void playPlayer(){
+        @Override
+        public void pausePlayer() {
             if (exoPlayer != null) {
-                exoPlayer.play();
+                exoPlayer.pause();
             }
         }
 
-        public void pausePlayer(){
+        @Override
+        public void playPlayer() {
             if (exoPlayer != null) {
-                exoPlayer.pause();
+                exoPlayer.play();
             }
         }
 
@@ -265,9 +271,10 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         }
     }
 
-    public static class youtube_viewholder extends RecyclerView.ViewHolder {
+    public static class youtube_viewholder extends RecyclerView.ViewHolder implements VideoPlayerHolder{
         private WebView webView;
         FrameLayout fullscreenContainer;
+        String url, htmlString;
 
         public youtube_viewholder(@NonNull View itemView) {
             super(itemView);
@@ -293,9 +300,9 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 }
             });
 
-            String url = YoutubeUtils.getYouTubeVideoId(videoUrl);
+            url = YoutubeUtils.getYouTubeVideoId(videoUrl);
             // Create the HTML embed string with autoplay and mute parameters
-            String htmlString = "<html><body style=\"margin:0;padding:0;\">" +
+            htmlString = "<html><body style=\"margin:0;padding:0;\">" +
                     "<iframe id=\"youtubePlayer\" width=\"100%\" height=\"100%\" src=\"https://www.youtube.com/embed/"
                     + url
                     + "?enablejsapi=1&autoplay=1&mute=1&controls=1\" frameborder=\"0\" allow=\"accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>" +
@@ -307,18 +314,25 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                     "</script>" +
                     "<script src=\"https://www.youtube.com/iframe_api\"></script>" +
                     "</body></html>";
+        }
 
+        @Override
+        public void releasePlayer() {
+            if (webView != null) {
+                webView.loadUrl("about:blank");
+                webView.clearHistory();
+                webView.stopLoading();
+            }
+        }
+
+        @Override
+        public void pausePlayer() {
+            webView.loadUrl("about:blank");
+        }
+
+        @Override
+        public void playPlayer() {
             webView.loadData(htmlString, "text/html", "utf-8");
-        }
-
-        private void youtubePlay() {
-            String playCode = "if (player) { player.playVideo(); }";
-            webView.evaluateJavascript(playCode, null);
-        }
-
-        private void youtubePause() {
-            String pauseCode = "if (player) { player.pauseVideo(); }";
-            webView.evaluateJavascript(pauseCode, null);
         }
 
         private void setFullScreenLayout(android.view.View customView) {
@@ -335,71 +349,66 @@ public class adapter_video extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             webView.setVisibility(View.VISIBLE);
             ((actv_video_pager) itemView.getContext()).showSystemUI();
         }
-
-        public void releaseWebView() {
-            if (webView != null) {
-                webView.loadUrl("about:blank"); // Stop video playback
-                webView.clearHistory();       // Clear navigation history
-                webView.stopLoading();
-            }
-        }
     }
 
     @Override
     public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
         super.onViewRecycled(holder);
         Toast.makeText(holder.itemView.getContext(), "Recycled item ", Toast.LENGTH_SHORT).show();
-
-        if (holder instanceof mp4_viewholder) {
-            ((mp4_viewholder) holder).releasePlayer();
-        } else if (holder instanceof youtube_viewholder) {
-            ((youtube_viewholder) holder).releaseWebView();
-        }
+        //((VideoPlayerHolder) holder).releasePlayer();
     }
 
     @Override
     public void onViewDetachedFromWindow(@NonNull RecyclerView.ViewHolder holder) {
         super.onViewDetachedFromWindow(holder);
-
-        if (holder instanceof mp4_viewholder) {
-            ((mp4_viewholder) holder).pausePlayer();
-            activeMp4Players.remove(holder);
-        } else if(holder instanceof youtube_viewholder){
-            ((youtube_viewholder) holder).youtubePause();
+        Log.d("TAG", "Detach");
+        if (holder instanceof VideoPlayerHolder) {
+            ((VideoPlayerHolder) holder).pausePlayer();
+            removeVideoHolder((VideoPlayerHolder) holder);
         }
     }
 
     @Override
     public void onViewAttachedToWindow(@NonNull RecyclerView.ViewHolder holder) {
         super.onViewAttachedToWindow(holder);
+        Log.d("TAG", "Attach");
+        if (holder instanceof VideoPlayerHolder) {
+            addVideoHolder((VideoPlayerHolder) holder);
+            ((VideoPlayerHolder) holder).playPlayer();
 
-        if (holder instanceof mp4_viewholder) {
-            activeMp4Players.add((mp4_viewholder) holder);
-            ((mp4_viewholder) holder).playPlayer();
-
-        }  else if(holder instanceof youtube_viewholder){
-            ((youtube_viewholder) holder).youtubePlay();
         }
+    }
+
+    public void addVideoHolder(VideoPlayerHolder holder) {
+        activeVideoPlayers.add(holder);
+    }
+
+    public void removeVideoHolder(VideoPlayerHolder holder) {
+        activeVideoPlayers.remove(holder);
     }
 
     public void releaseVideos() {
-        // Loop through all active mp4_viewholder instances and pause them
-        for (mp4_viewholder viewHolder : activeMp4Players) {
-            viewHolder.releasePlayer();
+        for (VideoPlayerHolder holder : activeVideoPlayers) {
+            holder.releasePlayer();
         }
+        activeVideoPlayers.clear();
     }
 
     public void pauseVideos() {
-        // Loop through all active mp4_viewholder instances and pause them
-        for (mp4_viewholder viewHolder : activeMp4Players) {
-            viewHolder.pausePlayer();
+        for (VideoPlayerHolder holder : activeVideoPlayers) {
+            holder.pausePlayer();
         }
     }
 
     public void resumeVideos() {
-        // Loop through all active mp4_viewholder instances and pause them
-        for (mp4_viewholder viewHolder : activeMp4Players) {
-            viewHolder.playPlayer();
+        for (VideoPlayerHolder holder : activeVideoPlayers) {
+            holder.playPlayer();
         }
+    }
+
+    public interface VideoPlayerHolder {
+        void releasePlayer();
+        void pausePlayer();
+        void playPlayer();
     }
 }
