@@ -1,5 +1,6 @@
 package com.example.rndproject.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.Log;
@@ -11,7 +12,6 @@ import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
@@ -27,9 +27,7 @@ import com.example.rndproject.actv_video_pager;
 import com.example.rndproject.model.VideoItem;
 import com.example.rndproject.utils.YoutubeUtils;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -98,13 +96,13 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     public static class mp4_viewholder extends RecyclerView.ViewHolder{
-        private PlayerView playerView;
+        private final PlayerView playerView;
 
         private String videoUrl;
 
-        private ImageButton btnPlayPause;
-        private ImageButton btnFullscreen;
-        private SeekBar seekBar;
+        private final ImageButton btnPlayPause;
+        private final ImageButton btnFullscreen;
+        private final SeekBar seekBar;
 
         private boolean isFullscreen = false;
         private ViewGroup originalParent;
@@ -266,7 +264,7 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     public static class youtube_viewholder extends RecyclerView.ViewHolder implements adapter_video.VideoPlayerHolder {
-        private WebView webView;
+        private final WebView webView;
         FrameLayout fullscreenContainer;
         String url, htmlString;
 
@@ -277,6 +275,7 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
             fullscreenContainer = ((actv_video_pager) itemView.getContext()).getFullscreenContainer();
         }
 
+        @SuppressLint("SetJavaScriptEnabled")
         public void bind(String videoUrl) {
             webView.getSettings().setJavaScriptEnabled(true);
             webView.getSettings().setDomStorageEnabled(true);
