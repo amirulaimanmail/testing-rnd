@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.rndproject.adapter.adapter_video;
+import com.example.rndproject.adapter.adapter_video2;
 import com.example.rndproject.model.VideoItem;
 
 import java.util.ArrayList;
@@ -19,8 +19,7 @@ import java.util.List;
 public class actv_video_pager extends AppCompatActivity {
 
     RecyclerView rv;
-    adapter_video adapter;
-
+    adapter_video2 adapter;
     FrameLayout fl_fullscreen;
 
     @Override
@@ -43,11 +42,8 @@ public class actv_video_pager extends AppCompatActivity {
         videoList.add(new VideoItem("https://www.youtube.com/watch?v=YfhfYcQV54c"));
         videoList.add(new VideoItem("https://www.youtube.com/watch?v=QqgQkhBF9jU&t"));
 
-
-
-
         // Set Adapter
-        adapter = new adapter_video(videoList);
+        adapter = new adapter_video2(this, videoList);
         rv.setAdapter(adapter);
 
         // Enable snapping to one item at a time
@@ -58,22 +54,14 @@ public class actv_video_pager extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        adapter.resumeVideos();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (adapter != null) {
-            adapter.pauseVideos(); // Pause videos when the activity is no longer in the foreground
-        }
+        adapter.resumePlayer();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         if (adapter != null) {
-            adapter.pauseVideos(); // Pause videos when the activity is no longer in the foreground
+            adapter.pausePlayer();
         }
     }
 
@@ -81,7 +69,7 @@ public class actv_video_pager extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (adapter != null) {
-            adapter.releaseVideos();
+            adapter.releasePlayer();
         }
     }
 
