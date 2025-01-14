@@ -5,16 +5,20 @@ import android.content.Context;
 import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
@@ -37,9 +41,11 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     private static boolean initializeFirstPlayer;
 
+    private static Runnable onPlaybackStateEnded;
+
     private youtube_viewholder currentYoutubePlayer;
 
-    public adapter_video2(Context context, List<VideoItem> videoList) {
+    public adapter_video2(Context context, List<VideoItem> videoList, Runnable onPlaybackStateEnded) {
         this.videoList = videoList;
         this.videoList.removeIf(video -> {
             String type = video.getVideoType();
@@ -48,6 +54,8 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         exoPlayer = new ExoPlayer.Builder(context).build();
         initializeFirstPlayer = true;
+
+        adapter_video2.onPlaybackStateEnded = onPlaybackStateEnded;
     }
 
     @NonNull
@@ -122,6 +130,7 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
             playerView.setPlayer(null);
         }
 
+        @SuppressLint("ClickableViewAccessibility")
         @OptIn(markerClass = UnstableApi.class)
         public void initializeExoPlayer(){
             playerView.setPlayer(exoPlayer);
@@ -163,6 +172,21 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             });
 
+            seekBar.setOnTouchListener((v, event) -> {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        itemView.getParent().requestDisallowInterceptTouchEvent(true);
+                        break;
+
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        itemView.getParent().requestDisallowInterceptTouchEvent(false);
+                        break;
+                }
+                return false;
+            });
+
+
             // Listen for player
             exoPlayer.addListener(new Player.Listener() {
                 @Override
@@ -172,12 +196,10 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     }
 
                     if (playbackState == Player.STATE_ENDED) {
-                        if(controllerDisabled){
-                            playerView.setUseController(true);
-                            controllerDisabled = false;
+                        playerView.setUseController(false);
+                        if (onPlaybackStateEnded != null) {
+                            onPlaybackStateEnded.run();
                         }
-                        exoPlayer.seekTo(0);
-                        exoPlayer.play();
                     }
                 }
 
@@ -267,18 +289,56 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
         private final WebView webView;
         FrameLayout fullscreenContainer;
         String url, htmlString;
+        View touchOverlay;
 
+        @SuppressLint("ClickableViewAccessibility")
         public youtube_viewholder(@NonNull View itemView) {
             super(itemView);
             webView = itemView.findViewById(R.id.actv_video_youtube_webview);
             webView.setBackgroundColor(Color.BLACK);
             fullscreenContainer = ((actv_video_pager) itemView.getContext()).getFullscreenContainer();
+
+            // Create the touch overlay view
+            touchOverlay = new View(itemView.getContext());
+            touchOverlay.setLayoutParams(new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, 220)); // Adjust height as needed
+            touchOverlay.setBackgroundColor(Color.TRANSPARENT); // Semi-transparent blue
+            touchOverlay.setClickable(false); // Allow touch through
+
+            // Get the parent ConstraintLayout of the WebView
+            ConstraintLayout parentLayout = (ConstraintLayout) itemView.findViewById(R.id.recycler_item_youtube_container); // Ensure correct parent ID.
+
+            // Add the overlay directly on top of the WebView
+            parentLayout.addView(touchOverlay);
+
+            ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) touchOverlay.getLayoutParams();
+            params.bottomToBottom = parentLayout.getId();  // Align the bottom of the overlay to the bottom of the parent layout
+            params.leftToLeft = parentLayout.getId();     // Align the left of the overlay to the left of the parent layout
+            params.rightToRight = parentLayout.getId();   // Align the right of the overlay to the right of the parent layout
+            touchOverlay.setLayoutParams(params);
+
+            // Set touch listener to trigger Toast
+            touchOverlay.setOnTouchListener((v, event) -> {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        itemView.getParent().requestDisallowInterceptTouchEvent(true); // Disallow parent from intercepting touch events
+                        break;
+
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        itemView.getParent().requestDisallowInterceptTouchEvent(false); // Allow parent to intercept touch events again
+                        break;
+                }
+                return false; // Allow touch to propagate to the WebView beneath
+            });
         }
 
         @SuppressLint("SetJavaScriptEnabled")
         public void bind(String videoUrl) {
             webView.getSettings().setJavaScriptEnabled(true);
             webView.getSettings().setDomStorageEnabled(true);
+            WebView.setWebContentsDebuggingEnabled(true);
+
             webView.setWebChromeClient(new WebChromeClient() {
                 @Override
                 public void onShowCustomView(android.view.View view, CustomViewCallback callback) {
@@ -293,26 +353,49 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             });
 
+            webView.addJavascriptInterface(new Object() {
+                @JavascriptInterface
+                public void onVideoEnded() {
+                    onPlaybackStateEnded.run();
+                }
+            }, "Android");
+
+
             url = YoutubeUtils.getYouTubeVideoId(videoUrl);
-            // Create the HTML embed string with autoplay and mute parameters
+
             htmlString = "<html><body style=\"margin:0;padding:0;\">" +
-                    "<iframe id=\"youtubePlayer\" width=\"100%\" height=\"100%\" src=\"https://www.youtube.com/embed/"
-                    + url
-                    + "?enablejsapi=1&autoplay=1&mute=1&controls=1\" frameborder=\"0\" allow=\"accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>" +
+                    "<iframe id=\"youtubePlayer\" width=\"100%\" height=\"100%\" src=\"https://www.youtube.com/embed/" +
+                    url +
+                    "?enablejsapi=1&autoplay=1&mute=1&controls=1\" frameborder=\"0\" allow=\"accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>" +
                     "<script>" +
                     "var player;" +
                     "function onYouTubePlayerAPIReady() {" +
-                    "    player = new YT.Player('youtubePlayer');" +
+                    "    player = new YT.Player('youtubePlayer', {" +
+                    "       events: {" +
+                    "           'onStateChange': onPlayerStateChange" +
+                    "       }"+
+                    "    });" +
                     "}" +
+
+                    "function onPlayerStateChange(event) {\n" +
+                    "   if (event.data == YT.PlayerState.ENDED) {\n" +
+                    "       Android.onVideoEnded();\n" +
+                    "   }\n" +
+                    "}" +
+
                     "</script>" +
                     "<script src=\"https://www.youtube.com/iframe_api\"></script>" +
                     "</body></html>";
 
-            if(initializeFirstPlayer) {
+
+
+
+            if (initializeFirstPlayer) {
                 initializeFirstPlayer = false;
                 playPlayer();
             }
         }
+
 
         public void releasePlayer() {
             if (webView != null) {
@@ -354,11 +437,11 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     @Override
     public void onViewDetachedFromWindow(@NonNull RecyclerView.ViewHolder holder) {
+        Log.d("TAG", "View " + holder.getLayoutPosition() + " detach");
         super.onViewDetachedFromWindow(holder);
 
         if(holder instanceof mp4_viewholder){
             ((mp4_viewholder) holder).playerView.setUseController(false);
-            releaseExoPlayer();
 
         } else if(holder instanceof youtube_viewholder){
             ((youtube_viewholder) holder).pausePlayer();
@@ -366,11 +449,13 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         if(newViewHolder != holder && newViewHolder != null){
             if(newViewHolder instanceof mp4_viewholder){
+                releaseExoPlayer();
                 ((mp4_viewholder) newViewHolder).releaseExoPlayerFromPlayerView();
                 ((mp4_viewholder) newViewHolder).initializeExoPlayer();
                 ((mp4_viewholder) newViewHolder).playerView.setUseController(true);
 
             } else if(newViewHolder instanceof youtube_viewholder){
+                releaseExoPlayer();
                 currentYoutubePlayer = (youtube_viewholder) newViewHolder;
                 ((youtube_viewholder) newViewHolder).playPlayer();
             }
@@ -380,6 +465,7 @@ public class adapter_video2 extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     @Override
     public void onViewAttachedToWindow(@NonNull RecyclerView.ViewHolder holder) {
+        Log.d("TAG", "View " + holder.getLayoutPosition() + " attach");
         super.onViewAttachedToWindow(holder);
         newViewHolder = holder;
     }

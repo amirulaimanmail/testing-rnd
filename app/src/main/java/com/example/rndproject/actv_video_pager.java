@@ -4,9 +4,11 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -42,8 +44,10 @@ public class actv_video_pager extends AppCompatActivity {
         videoList.add(new VideoItem("https://www.youtube.com/watch?v=YfhfYcQV54c"));
         videoList.add(new VideoItem("https://www.youtube.com/watch?v=QqgQkhBF9jU&t"));
 
+        Runnable scrollToNextItemRunnable = this::scrollToNextItem;
+
         // Set Adapter
-        adapter = new adapter_video2(this, videoList);
+        adapter = new adapter_video2(this, videoList, scrollToNextItemRunnable);
         rv.setAdapter(adapter);
 
         // Enable snapping to one item at a time
@@ -72,6 +76,24 @@ public class actv_video_pager extends AppCompatActivity {
             adapter.releasePlayer();
         }
     }
+
+    public void scrollToNextItem() {
+        LinearLayoutManager layoutManager = (LinearLayoutManager) rv.getLayoutManager();
+        int currentPosition = layoutManager.findFirstVisibleItemPosition();
+
+        if (currentPosition != RecyclerView.NO_POSITION && currentPosition < adapter.getItemCount() - 1) {
+            // Get the width of the first visible item
+            View firstVisibleView = layoutManager.findViewByPosition(currentPosition);
+            int itemWidth = firstVisibleView != null ? firstVisibleView.getWidth() : 0;
+
+            // Smooth scroll by the width of one item, ensuring no overshooting
+            rv.smoothScrollBy(itemWidth, 0);
+        }
+    }
+
+
+
+
 
     public FrameLayout getFullscreenContainer() {
         return fl_fullscreen;
